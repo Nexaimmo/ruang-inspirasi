@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>KISAH — Berita Inspiratif</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=Source+Serif+4:ital,opsz,wght@0,8..60,300;0,8..60,400;0,8..60,600;1,8..60,300;1,8..60,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 <style>
@@ -513,35 +514,35 @@ window.fbDelete = async function(id) {
   await deleteDoc(doc(db, COL, id));
 };
 
-/* Upload gambar ke ImgBB — gratis, tanpa Firebase Storage */
-window.fbUploadImage = function(blob, onProgress) {
-  return new Promise(function(resolve, reject) {
-    var IMGBB_KEY = 'dfa97668025ec8b08cfc939a8a7f2ec3';
-    var formData  = new FormData();
-    formData.append('image', blob, 'photo.jpg');
+/* Upload gambar ke supabase*/
+window.fbUploadImage = async function(blob, onProgress) {
 
-    var xhr = new XMLHttpRequest();
-    xhr.open('POST', 'https://api.imgbb.com/1/upload?key=' + IMGBB_KEY);
+  try {
 
-    xhr.upload.onprogress = function(e) {
-      if (e.lengthComputable && onProgress)
-        onProgress(Math.round((e.loaded / e.total) * 100));
-    };
+    const fileName =
+      Date.now() + "-" + Math.random().toString(36).substring(2) + ".jpg";
 
-    xhr.onload = function() {
-      try {
-        var res = JSON.parse(xhr.responseText);
-        if (res.success) {
-          resolve(res.data.url);   /* URL permanen ImgBB */
-        } else {
-          reject(new Error(res.error && res.error.message || 'ImgBB upload gagal'));
-        }
-      } catch(e) { reject(e); }
-    };
+    const { data, error } = await supabaseClient
+      .storage
+      .from("berita-images")
+      .upload(fileName, blob, {
+        contentType: "image/jpeg",
+        upsert: false
+      });
 
-    xhr.onerror = function() { reject(new Error('Network error')); };
-    xhr.send(formData);
-  });
+    if (error) throw error;
+
+    const { data: publicData } = supabaseClient
+      .storage
+      .from("berita-images")
+      .getPublicUrl(fileName);
+
+    return publicData.publicUrl;
+
+  } catch(err) {
+    console.error(err);
+    throw err;
+  }
 };
 
 /* ── START APP ── */
@@ -549,6 +550,13 @@ window.appReady();
 </script>
 
 <script>
+  const SUPABASE_URL = "https://cgcuqpospzbpcfehepgz.supabase.co";
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNnY3VxcG9zcHpicGNmZWhlcGd6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAwNTY3MTMsImV4cCI6MjA5NTYzMjcxM30.E7RkgI0_Oh4Zt0U_P3ZG2sexdwyL3rtwM9JD9y2MT3Q;";
+
+const supabaseClient = supabase.createClient(
+  SUPABASE_URL,
+  SUPABASE_KEY
+);
 /* ── CONFIG ── */
 var ADMIN_PASSWORD = 'kisah2025'; // ← Ganti password di sini
 var SECRET_CLICKS  = 5;
