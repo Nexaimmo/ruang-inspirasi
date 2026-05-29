@@ -283,8 +283,7 @@ nav{background:var(--ink);padding:0 2rem;display:flex;align-items:stretch;justif
 
 <!-- LOADING -->
 <div class="loading-screen" id="loading-screen">
-  <div class="loading-logo" style="justify-content: center; font-size: medium;">RUANG
-    <span>INSPIRASI</span></div>
+  <div class="loading-logo" style="font-size:medium;font-weight:bold ">RUANG <span>INSPIRASI</span></div>
   <div class="loading-bar"><div class="loading-fill"></div></div>
   <div class="loading-text">Memuat berita...</div>
 </div>
@@ -316,7 +315,7 @@ nav{background:var(--ink);padding:0 2rem;display:flex;align-items:stretch;justif
 <nav>
   <div class="nav-brand" onclick="showPage('main')">
     <div style="position:relative">
-      <div class="nav-logo">RUANG<span>INSPIRASI</span></div>
+      <div class="nav-logo" style="font-size:1.5rem;font-weight:bold ">RUANG <span>INSPIRASI</span></div>
       <div class="nav-tagline">Berita Inspiratif Indonesia</div>
       <div id="secret-zone" onclick="secretClick()" style="position:absolute;width:16px;height:16px;bottom:0;right:0;cursor:default"></div>
     </div>
@@ -471,9 +470,7 @@ import {
   getFirestore, collection, getDocs, addDoc, updateDoc, deleteDoc,
   doc, orderBy, query, serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import {
-  getStorage, ref, uploadBytesResumable, getDownloadURL, deleteObject
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
+/* Firebase Storage tidak digunakan — pakai ImgBB */
 
 /* ── FIREBASE CONFIG ── */
 const firebaseConfig = {
@@ -489,7 +486,7 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db      = getFirestore(app);
-const storage = getStorage(app);
+/* storage = getStorage(app) — diganti ImgBB */
 const COL = "articles";
 
 /* ── FIREBASE HELPERS (exposed to window) ── */
@@ -516,21 +513,34 @@ window.fbDelete = async function(id) {
   await deleteDoc(doc(db, COL, id));
 };
 
-/* Upload file ke Firebase Storage, kembalikan download URL */
-window.fbUploadImage = function(file, onProgress) {
+/* Upload gambar ke ImgBB — gratis, tanpa Firebase Storage */
+window.fbUploadImage = function(blob, onProgress) {
   return new Promise(function(resolve, reject) {
-    var ext      = file.name.split('.').pop();
-    var filename = 'images/' + Date.now() + '_' + Math.random().toString(36).slice(2) + '.' + ext;
-    var storRef  = ref(storage, filename);
-    var task     = uploadBytesResumable(storRef, file);
-    task.on('state_changed',
-      function(snap) {
-        var pct = Math.round((snap.bytesTransferred / snap.totalBytes) * 100);
-        if (onProgress) onProgress(pct);
-      },
-      function(err) { reject(err); },
-      function() { getDownloadURL(task.snapshot.ref).then(resolve).catch(reject); }
-    );
+    var IMGBB_KEY = 'dfa97668025ec8b08cfc939a8a7f2ec3';
+    var formData  = new FormData();
+    formData.append('image', blob, 'photo.jpg');
+
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', 'https://api.imgbb.com/1/upload?key=' + IMGBB_KEY);
+
+    xhr.upload.onprogress = function(e) {
+      if (e.lengthComputable && onProgress)
+        onProgress(Math.round((e.loaded / e.total) * 100));
+    };
+
+    xhr.onload = function() {
+      try {
+        var res = JSON.parse(xhr.responseText);
+        if (res.success) {
+          resolve(res.data.url);   /* URL permanen ImgBB */
+        } else {
+          reject(new Error(res.error && res.error.message || 'ImgBB upload gagal'));
+        }
+      } catch(e) { reject(e); }
+    };
+
+    xhr.onerror = function() { reject(new Error('Network error')); };
+    xhr.send(formData);
   });
 };
 
