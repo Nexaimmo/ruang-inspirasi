@@ -473,7 +473,7 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 /* Firebase Storage tidak digunakan — pakai ImgBB */
 
-/* ── FIREBASE CONFIG ── */
+/* ── FIREBASE & SUPABASE CONFIG ── */
 const firebaseConfig = {
   apiKey: "AIzaSyDHrFhwg83CZKTEMyeh-Qf3e68nyXuqOsc",
   authDomain: "ruang-inspirasi-fbdce.firebaseapp.com",
@@ -484,7 +484,13 @@ const firebaseConfig = {
   appId: "1:452014090741:web:49a81905c5a2d40c5118bc",
   measurementId: "G-4MPFMENZRF"
 };
+  const SUPABASE_URL = "https://cgcuqpospzbpcfehepgz.supabase.co";
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNnY3VxcG9zcHpicGNmZWhlcGd6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAwNTY3MTMsImV4cCI6MjA5NTYzMjcxM30.E7RkgI0_Oh4Zt0U_P3ZG2sexdwyL3rtwM9JD9y2MT3Q;";
 
+const supabaseClient = supabase.createClient(
+  SUPABASE_URL,
+  SUPABASE_KEY
+);
 const app = initializeApp(firebaseConfig);
 const db      = getFirestore(app);
 /* storage = getStorage(app) — diganti ImgBB */
@@ -550,13 +556,7 @@ window.appReady();
 </script>
 
 <script>
-  const SUPABASE_URL = "https://cgcuqpospzbpcfehepgz.supabase.co";
-const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNnY3VxcG9zcHpicGNmZWhlcGd6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAwNTY3MTMsImV4cCI6MjA5NTYzMjcxM30.E7RkgI0_Oh4Zt0U_P3ZG2sexdwyL3rtwM9JD9y2MT3Q;";
 
-const supabaseClient = supabase.createClient(
-  SUPABASE_URL,
-  SUPABASE_KEY
-);
 /* ── CONFIG ── */
 var ADMIN_PASSWORD = 'kisah2025'; // ← Ganti password di sini
 var SECRET_CLICKS  = 5;
