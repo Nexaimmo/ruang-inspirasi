@@ -283,7 +283,7 @@ nav{background:var(--ink);padding:0 2rem;display:flex;align-items:stretch;justif
 
 <!-- LOADING -->
 <div class="loading-screen" id="loading-screen">
-  <div class="loading-logo">RUANG <span>INSPIRASI</span></div>
+  <div class="loading-logo">KI<span>SAH</span></div>
   <div class="loading-bar"><div class="loading-fill"></div></div>
   <div class="loading-text">Memuat berita...</div>
 </div>
@@ -315,7 +315,7 @@ nav{background:var(--ink);padding:0 2rem;display:flex;align-items:stretch;justif
 <nav>
   <div class="nav-brand" onclick="showPage('main')">
     <div style="position:relative">
-      <div class="nav-logo">RUANG <span>INSPIRASI</span></div>
+      <div class="nav-logo">KI<span>SAH</span></div>
       <div class="nav-tagline">Berita Inspiratif Indonesia</div>
       <div id="secret-zone" onclick="secretClick()" style="position:absolute;width:16px;height:16px;bottom:0;right:0;cursor:default"></div>
     </div>
@@ -436,7 +436,7 @@ nav{background:var(--ink);padding:0 2rem;display:flex;align-items:stretch;justif
               <input type="file" id="f-image-file" accept="image/*" onchange="handleFileSelect(this)">
               <i class="fa-solid fa-cloud-arrow-up"></i>
               <p>Klik atau seret foto ke sini</p>
-              <small>JPG, PNG, WebP — maks. 5 MB</small>
+              <small>JPG, PNG, WebP — maks. 20 MB · dikompres otomatis</small>
             </div>
             <div class="img-upload-progress" id="img-upload-progress">
               <div class="img-upload-progress-bar" id="img-upload-bar"></div>
@@ -796,17 +796,46 @@ function previewFromUrl(url) {
 function handleFileSelect(input) {
   var file = input.files[0];
   if (!file) return;
-  if (file.size > 5 * 1024 * 1024) {
-    showToast('Ukuran file maksimal 5 MB', 'error');
+  if (file.size > 20 * 1024 * 1024) {
+    showToast('Ukuran file maksimal 20 MB', 'error');
     input.value = '';
     return;
   }
-  pendingFile = file;
-  // Tampilkan preview lokal pakai FileReader
+  // Kompres pakai Canvas sebelum disimpan sebagai pendingFile
+  compressImage(file, 1280, 0.82, function(compressedBlob, previewUrl) {
+    pendingFile = compressedBlob;
+    document.getElementById('img-preview').src = previewUrl;
+    showPreview();
+    // Tampilkan info ukuran
+    var orig = (file.size / 1024).toFixed(0);
+    var comp = (compressedBlob.size / 1024).toFixed(0);
+    showToast('Foto dikompres: ' + orig + ' KB → ' + comp + ' KB');
+  });
+}
+
+/* Kompres gambar pakai Canvas API — tidak butuh library eksternal */
+function compressImage(file, maxWidth, quality, callback) {
   var reader = new FileReader();
   reader.onload = function(e) {
-    document.getElementById('img-preview').src = e.target.result;
-    showPreview();
+    var img = new Image();
+    img.onload = function() {
+      // Hitung dimensi baru, pertahankan rasio
+      var w = img.width;
+      var h = img.height;
+      if (w > maxWidth) {
+        h = Math.round(h * maxWidth / w);
+        w = maxWidth;
+      }
+      var canvas = document.createElement('canvas');
+      canvas.width  = w;
+      canvas.height = h;
+      var ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, w, h);
+      canvas.toBlob(function(blob) {
+        callback(blob, canvas.toDataURL('image/jpeg', quality));
+      }, 'image/jpeg', quality);
+    };
+    img.src = e.target.result;
   };
   reader.readAsDataURL(file);
 }
